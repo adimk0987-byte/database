@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Pothole Detection Dashboard</title>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fb;
+            color: #1f2937;
+        }
+
+
+        /* =========================
+           HEADER
+        ========================= */
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 22px 30px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        header p {
+            margin: 6px 0 0;
+            color: #cbd5e1;
+        }
+
+
+        /* =========================
+           CONTAINER
+        ========================= */
+
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+
+        /* =========================
+           CARDS
+        ========================= */
+
+        .card {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 25px;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+
+        /* =========================
+           STATS
+        ========================= */
+
+        .stats {
+            display: grid;
+            grid-template-columns:
+                repeat(3, 1fr);
+
+            gap: 18px;
+
+            margin-bottom: 25px;
+        }
+
+
+        .stat {
+            background: white;
+            padding: 22px;
+            border-radius: 14px;
+
+            box-shadow:
+                0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+
+        .stat-title {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+
+        .stat-value {
+            font-size: 30px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+
+        /* =========================
+           FORM
+        ========================= */
+
+        .form-grid {
+            display: grid;
+
+            grid-template-columns:
+                1fr 1fr 1fr auto;
+
+            gap: 12px;
+
+            align-items: end;
+        }
+
+
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+
+        input {
+            width: 100%;
+
+            padding: 12px;
+
+            border:
+                1px solid #d1d5db;
+
+            border-radius: 8px;
+
+            font-size: 15px;
+        }
+
+
+        input:focus {
+            outline: none;
+
+            border-color: #2563eb;
+
+            box-shadow:
+                0 0 0 2px rgba(
+                    37,
+                    99,
+                    235,
+                    0.15
+                );
+        }
+
+
+        /* =========================
+           BUTTONS
+        ========================= */
+
+        button {
+            border: none;
+
+            border-radius: 8px;
+
+            padding: 12px 18px;
+
+            background: #2563eb;
+
+            color: white;
+
+            font-size: 15px;
+
+            cursor: pointer;
+        }
+
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+
+        button:disabled {
+            background: #94a3b8;
+
+            cursor: not-allowed;
+        }
+
+
+        .refresh-button {
+            background: #475569;
+        }
+
+
+        .refresh-button:hover {
+            background: #334155;
+        }
+
+
+        /* =========================
+           STATUS
+        ========================= */
+
+        #status {
+            margin-top: 15px;
+
+            font-size: 14px;
+
+            min-height: 20px;
+        }
+
+
+        .success {
+            color: #16a34a;
+        }
+
+
+        .error {
+            color: #dc2626;
+        }
+
+
+        /* =========================
+           TABLE
+        ========================= */
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+
+        table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            margin-top: 18px;
+        }
+
+
+        th {
+            background: #f1f5f9;
+
+            padding: 14px;
+
+            text-align: left;
+
+            font-size: 14px;
+
+            color: #475569;
+        }
+
+
+        td {
+            padding: 14px;
+
+            border-bottom:
+                1px solid #e5e7eb;
+
+            font-size: 14px;
+        }
+
+
+        tr:hover td {
+            background: #f8fafc;
+        }
+
+
+        .confidence {
+            font-weight: bold;
+        }
+
+
+        .high {
+            color: #16a34a;
+        }
+
+
+        .medium {
+            color: #d97706;
+        }
+
+
+        .low {
+            color: #dc2626;
+        }
+
+
+        .empty {
+            text-align: center;
+
+            padding: 30px;
+
+            color: #64748b;
+        }
+
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 900px) {
+
+            .stats {
+                grid-template-columns:
+                    1fr;
+            }
+
+            .form-grid {
+                grid-template-columns:
+                    1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     HEADER
+========================= -->
+
+<header>
+
+    <h1>
+        🚧 Pothole Detection Dashboard
+    </h1>
+
+    <p>
+        Live Supabase monitoring system
+    </p>
+
+</header>
+
+
+
+<div class="container">
+
+
+    <!-- =========================
+         STATISTICS
+    ========================= -->
+
+    <div class="stats">
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Total Potholes
+            </div>
+
+            <div
+                class="stat-value"
+                id="totalCount"
+            >
+                0
+            </div>
+
+        </div>
+
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Average Confidence
+            </div>
+
+            <div
+                class="stat-value"
+                id="averageConfidence"
+            >
+                0%
+            </div>
+
+        </div>
+
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                Latest Detection
+            </div>
+
+            <div
+                class="stat-value"
+                id="latestDetection"
+                style="font-size:18px"
+            >
+                —
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+
+    <!-- =========================
+         ADD DETECTION
+    ========================= -->
+
+    <div class="card">
+
+        <h2>
+            Add Pothole Detection
+        </h2>
+
+
+        <div class="form-grid">
+
+
+            <div>
+
+                <label for="area">
+                    Area
+                </label>
+
+                <input
+                    type="text"
+                    id="area"
+                    placeholder="Example: Whitefield"
+                >
+
+            </div>
+
+
+
+            <div>
+
+                <label for="coordinates">
+                    Coordinates
+                </label>
+
+                <input
+                    type="text"
+                    id="coordinates"
+                    placeholder="12.9698,77.7500"
+                >
+
+            </div>
+
+
+
+            <div>
+
+                <label for="confidence">
+                    Confidence Score
+                </label>
+
+                <input
+                    type="number"
+                    id="confidence"
+                    placeholder="0.96"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                >
+
+            </div>
+
+
+
+            <button
+                id="addButton"
+                onclick="addPothole()"
+            >
+                + Add Detection
+            </button>
+
+
+        </div>
+
+
+        <div id="status"></div>
+
+
+    </div>
+
+
+
+    <!-- =========================
+         DETECTION TABLE
+    ========================= -->
+
+    <div class="card">
+
+
+        <div
+            style="
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                gap:10px;
+                flex-wrap:wrap;
+            "
+        >
+
+            <h2>
+                Detected Potholes
+            </h2>
+
+
+            <button
+                class="refresh-button"
+                onclick="loadPotholes()"
+            >
+                🔄 Refresh
+            </button>
+
+        </div>
+
+
+
+        <div class="table-container">
+
+
+            <table>
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            ID
+                        </th>
+
+                        <th>
+                            Created At
+                        </th>
+
+                        <th>
+                            Area
+                        </th>
+
+                        <th>
+                            Coordinates
+                        </th>
+
+                        <th>
+                            Confidence
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody
+                    id="potholeTable"
+                >
+
+                    <tr>
+
+                        <td
+                            colspan="5"
+                            class="empty"
+                        >
+                            Loading...
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+
+            </table>
+
+
+        </div>
+
+
+    </div>
+
+
+</div>
+
+
+
+<script>
+
+
+    // ==================================================
+    // SUPABASE CONFIGURATION
+    // ==================================================
+
+    const SUPABASE_URL =
+        "https://tgqrpplbgrfxikkfrsbo.supabase.co";
+
+
+    const SUPABASE_PUBLISHABLE_KEY =
+        "sb_publishable_9dL2cLW3O1a52luu193pYg_-AQ7T77Q";
+
+
+    const supabaseClient =
+        supabase.createClient(
+            SUPABASE_URL,
+            SUPABASE_PUBLISHABLE_KEY
+        );
+
+
+
+    // ==================================================
+    // LOAD POTHOLES
+    // ==================================================
+
+    async function loadPotholes() {
+
+
+        const table =
+            document.getElementById(
+                "potholeTable"
+            );
+
+
+        table.innerHTML = `
+
+            <tr>
+
+                <td
+                    colspan="5"
+                    class="empty"
+                >
+                    Loading...
+
+                </td>
+
+            </tr>
+
+        `;
+
+
+
+        const {
+            data,
+            error
+        } = await supabaseClient
+
+            .from("potholes")
+
+            .select(
+                "id, created_at, area, coordinates, confidence_score"
+            )
+
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            );
+
+
+
+        // ------------------------------------------
+        // ERROR
+        // ------------------------------------------
+
+        if (error) {
+
+            console.error(
+                "Supabase error:",
+                error
+            );
+
+
+            table.innerHTML = `
+
+                <tr>
+
+                    <td
+                        colspan="5"
+                        class="empty error"
+                    >
+
+                        ❌ ${escapeHTML(
+                            error.message
+                        )}
+
+                    </td>
+
+                </tr>
+
+            `;
+
+
+            return;
+
+        }
+
+
+
+        // ------------------------------------------
+        // EMPTY
+        // ------------------------------------------
+
+        if (!data || data.length === 0) {
+
+
+            table.innerHTML = `
+
+                <tr>
+
+                    <td
+                        colspan="5"
+                        class="empty"
+                    >
+
+                        No potholes detected yet.
+
+                    </td>
+
+                </tr>
+
+            `;
+
+
+            updateStatistics([]);
+
+            return;
+
+        }
+
+
+
+        // ------------------------------------------
+        // CREATE TABLE
+        // ------------------------------------------
+
+        table.innerHTML = "";
+
+
+        data.forEach(
+            pothole => {
+
+
+                const row =
+                    document.createElement(
+                        "tr"
+                    );
+
+
+                const confidence =
+                    Number(
+                        pothole.confidence_score
+                    );
+
+
+                const confidencePercent =
+                    confidence * 100;
+
+
+                let confidenceClass =
+                    "low";
+
+
+                if (
+                    confidence >= 0.8
+                ) {
+
+                    confidenceClass =
+                        "high";
+
+                }
+                else if (
+                    confidence >= 0.5
+                ) {
+
+                    confidenceClass =
+                        "medium";
+
+                }
+
+
+
+                const date =
+                    pothole.created_at
+                    ? new Date(
+                        pothole.created_at
+                    ).toLocaleString()
+                    : "—";
+
+
+
+                row.innerHTML = `
+
+                    <td>
+                        ${escapeHTML(
+                            String(
+                                pothole.id
+                            )
+                        )}
+                    </td>
+
+
+                    <td>
+                        ${escapeHTML(
+                            date
+                        )}
+                    </td>
+
+
+                    <td>
+                        ${escapeHTML(
+                            pothole.area ||
+                            "—"
+                        )}
+                    </td>
+
+
+                    <td>
+                        ${escapeHTML(
+                            pothole.coordinates ||
+                            "—"
+                        )}
+                    </td>
+
+
+                    <td
+                        class="confidence ${confidenceClass}"
+                    >
+                        ${isNaN(confidence)
+                            ? "—"
+                            : confidencePercent.toFixed(1) + "%"
+                        }
+                    </td>
+
+                `;
+
+
+                table.appendChild(row);
+
+
+            }
+        );
+
+
+
+        // Update statistics
+
+        updateStatistics(data);
+
+    }
+
+
+
+    // ==================================================
+    // STATISTICS
+    // ==================================================
+
+    function updateStatistics(
+        data
+    ) {
+
+
+        const total =
+            data.length;
+
+
+        document.getElementById(
+            "totalCount"
+        ).textContent =
+            total;
+
+
+
+        if (total === 0) {
+
+            document.getElementById(
+                "averageConfidence"
+            ).textContent =
+                "0%";
+
+
+            document.getElementById(
+                "latestDetection"
+            ).textContent =
+                "—";
+
+
+            return;
+
+        }
+
+
+
+        // Average confidence
+
+        const validConfidence =
+            data
+                .map(
+                    item =>
+                        Number(
+                            item.confidence_score
+                        )
+                )
+                .filter(
+                    value =>
+                        !isNaN(value)
+                );
+
+
+
+        if (
+            validConfidence.length > 0
+        ) {
+
+
+            const average =
+                validConfidence.reduce(
+                    (
+                        sum,
+                        value
+                    ) =>
+                        sum + value,
+                    0
+                )
+                /
+                validConfidence.length;
+
+
+            document.getElementById(
+                "averageConfidence"
+            ).textContent =
+                (
+                    average * 100
+                ).toFixed(1) + "%";
+
+        }
+
+
+
+        // Latest detection
+
+        const latest =
+            data[0];
+
+
+        if (
+            latest &&
+            latest.created_at
+        ) {
+
+
+            document.getElementById(
+                "latestDetection"
+            ).textContent =
+                new Date(
+                    latest.created_at
+                ).toLocaleTimeString();
+
+        }
+
+    }
+
+
+
+    // ==================================================
+    // ADD POTHOLE
+    // ==================================================
+
+    async function addPothole() {
+
+
+        const area =
+            document.getElementById(
+                "area"
+            ).value.trim();
+
+
+        const coordinates =
+            document.getElementById(
+                "coordinates"
+            ).value.trim();
+
+
+        const confidence =
+            parseFloat(
+                document.getElementById(
+                    "confidence"
+                ).value
+            );
+
+
+        const status =
+            document.getElementById(
+                "status"
+            );
+
+
+        const button =
+            document.getElementById(
+                "addButton"
+            );
+
+
+
+        // ------------------------------------------
+        // VALIDATION
+        // ------------------------------------------
+
+        if (!area) {
+
+            status.className =
+                "error";
+
+            status.textContent =
+                "❌ Please enter an area.";
+
+            return;
+
+        }
+
+
+
+        if (!coordinates) {
+
+            status.className =
+                "error";
+
+            status.textContent =
+                "❌ Please enter coordinates.";
+
+            return;
+
+        }
+
+
+
+        if (
+            isNaN(confidence) ||
+            confidence < 0 ||
+            confidence > 1
+        ) {
+
+            status.className =
+                "error";
+
+            status.textContent =
+                "❌ Confidence must be between 0 and 1.";
+
+            return;
+
+        }
+
+
+
+        // ------------------------------------------
+        // DISABLE BUTTON
+        // ------------------------------------------
+
+        button.disabled =
+            true;
+
+        button.textContent =
+            "Adding...";
+
+
+
+        // ------------------------------------------
+        // INSERT
+        // ------------------------------------------
+
+        const {
+            data,
+            error
+        } = await supabaseClient
+
+            .from("potholes")
+
+            .insert([
+                {
+
+                    area:
+                        area,
+
+                    coordinates:
+                        coordinates,
+
+                    confidence_score:
+                        confidence
+
+                }
+            ])
+
+            .select();
+
+
+
+        // ------------------------------------------
+        // ERROR
+        // ------------------------------------------
+
+        if (error) {
+
+
+            console.error(
+                "Insert error:",
+                error
+            );
+
+
+            status.className =
+                "error";
+
+
+            status.textContent =
+                "❌ " +
+                error.message;
+
+
+            button.disabled =
+                false;
+
+
+            button.textContent =
+                "+ Add Detection";
+
+
+            return;
+
+        }
+
+
+
+        // ------------------------------------------
+        // SUCCESS
+        // ------------------------------------------
+
+        status.className =
+            "success";
+
+
+        status.textContent =
+            "✅ Pothole added successfully!";
+
+
+        // Clear fields
+
+        document.getElementById(
+            "area"
+        ).value = "";
+
+
+        document.getElementById(
+            "coordinates"
+        ).value = "";
+
+
+        document.getElementById(
+            "confidence"
+        ).value = "";
+
+
+
+        button.disabled =
+            false;
+
+
+        button.textContent =
+            "+ Add Detection";
+
+
+
+        // Reload
+
+        await loadPotholes();
+
+
+        // Remove status after 3 seconds
+
+        setTimeout(
+            () => {
+
+                status.textContent =
+                    "";
+
+            },
+            3000
+        );
+
+    }
+
+
+
+    // ==================================================
+    // REALTIME SUPABASE
+    // ==================================================
+
+    supabaseClient
+
+        .channel(
+            "pothole-realtime"
+        )
+
+        .on(
+
+            "postgres_changes",
+
+            {
+
+                event: "*",
+
+                schema: "public",
+
+                table: "potholes"
+
+            },
+
+            payload => {
+
+
+                console.log(
+                    "Realtime update:",
+                    payload
+                );
+
+
+                loadPotholes();
+
+            }
+
+        )
+
+        .subscribe(
+            status => {
+
+                console.log(
+                    "Realtime status:",
+                    status
+                );
+
+            }
+        );
+
+
+
+    // ==================================================
+    // ESCAPE HTML
+    // Prevent HTML injection from database values
+    // ==================================================
+
+    function escapeHTML(
+        value
+    ) {
+
+        return String(value)
+
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+
+            .replace(
+                /</g,
+                "&lt;"
+            )
+
+            .replace(
+                />/g,
+                "&gt;"
+            )
+
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+
+            .replace(
+                /'/g,
+                "&#039;"
+            );
+
+    }
+
+
+
+    // ==================================================
+    // INITIAL LOAD
+    // ==================================================
+
+    loadPotholes();
+
+
+</script>
+
+
+</body>
+
+</html>
